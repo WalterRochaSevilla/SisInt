@@ -1,0 +1,6 @@
+[azul, amarillo, verde, amarillo, blanco, rojo, naranja, verde, azul]
+[azul, blanco, amarillo, verde, rojo, rojo, naranja, verde, azul]
+[amarillo, azul, amarillo, blanco, verde, rojo, amarillo, blanco, rojo]
+[naranja, azul, blanco, amarillo, rojo, amarillo, naranja, azul, blanco]
+[rojo, rojo, verde, azul, amarillo, rojo, blanco, azul, blanco]
+[verde, blanco, naranja, amarillo, blanco, azul, naranja, amarillo, verde]

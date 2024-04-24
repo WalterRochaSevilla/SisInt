@@ -1,70 +1,91 @@
 from Cara import Cara
 from corner_piece import Arista, Centro, Esquina
+from cube_solver import CuboSolverAStar
+
 
 class CuboRubik:
-    def __init__(self):
-        self.caras = self.inicializar_caras()
+    def __init__(self, estado_cubo):
+        self.estado_cubo=estado_cubo
+        self.caras = self.inicializar_caras(estado_cubo)
         self.piezas_registradas = {'Centro': {}, 'Arista': {}, 'Esquina': {}}
         self.inicializar_piezas_legales()
 
-    def inicializar_caras(self):
-        # Inicializar la lista de listas para representar las caras del cubo
-        caras = []
-        for _ in range(6):
-            caras.append([None] * 9)  # Cada cara tiene 9 piezas inicialmente vacías
-        return caras
+    def inicializar_caras(self, estado_cubo):
+      caras = {}
+      for numero_cara, estado in estado_cubo.items():
+          cara = Cara(numero_cara)
+          color_central = estado[4] 
+          if color_central == 'blanco':
+              caras[1] = cara
+          elif color_central == 'rojo':
+              caras[2] = cara
+          elif color_central == 'azul':
+              caras[3] = cara
+          elif color_central == 'verde':
+              caras[4] = cara
+          elif color_central == 'naranja':
+              caras[5] = cara
+          elif color_central == 'amarillo':
+              caras[6] = cara
+  
+          # Asignar el estado a la cara
+          cara.actualizar_estado(estado)
+  
+      return caras
 
     def inicializar_piezas_legales(self):
-        # Inicializar las combinaciones legales de piezas
-        self.colores_centros = {'amarillo', 'rojo', 'verde', 'naranja', 'azul', 'blanco'}
-        self.combinaciones_aristas = {('amarillo', 'rojo'), ('amarillo', 'naranja'), ('amarillo', 'azul'),
-                                       ('amarillo', 'verde'), ('blanco', 'rojo'), ('blanco', 'naranja'),
-                                       ('blanco', 'azul'), ('blanco', 'verde'), ('rojo', 'verde'), ('rojo', 'azul'),
-                                       ('naranja', 'verde'), ('naranja', 'azul')}
-        self.combinaciones_esquinas = {('amarillo', 'rojo', 'azul'), ('amarillo', 'verde', 'rojo'),
-                                        ('amarillo', 'naranja', 'azul'), ('amarillo', 'verde', 'naranja'),
-                                        ('blanco', 'rojo', 'azul'), ('blanco', 'rojo', 'verde'),
-                                        ('blanco', 'azul', 'naranja'), ('blanco', 'verde', 'naranja')}
-        # Marcar las combinaciones legales como presentes en los diccionarios
-        for color in self.colores_centros:
-            self.piezas_registradas['Centro'][color] = 0
-        for combinacion in self.combinaciones_aristas:
-            self.piezas_registradas['Arista'][combinacion] = 0
-        for combinacion in self.combinaciones_esquinas:
-            self.piezas_registradas['Esquina'][combinacion] = 0
+      # Inicializar las combinaciones legales de piezas
+      self.colores_centros = {'amarillo', 'rojo', 'verde', 'naranja', 'azul', 'blanco'}
+      self.combinaciones_aristas = {('amarillo', 'rojo'), ('amarillo', 'naranja'), ('amarillo', 'azul'),
+                                     ('amarillo', 'verde'), ('blanco', 'rojo'), ('blanco', 'naranja'),
+                                     ('blanco', 'azul'), ('blanco', 'verde'), ('rojo', 'verde'), ('rojo', 'azul'),
+                                     ('naranja', 'verde'), ('naranja', 'azul')}
+      self.combinaciones_esquinas = {('amarillo', 'rojo', 'azul'), ('amarillo', 'verde', 'rojo'),
+                                      ('amarillo', 'naranja', 'azul'), ('amarillo', 'verde', 'naranja'),
+                                      ('blanco', 'rojo', 'azul'), ('blanco', 'rojo', 'verde'),
+                                      ('blanco', 'azul', 'naranja'), ('blanco', 'verde', 'naranja')}
+      # Marcar las combinaciones legales como presentes en los diccionarios
+      for color in self.colores_centros:
+          self.piezas_registradas['Centro'][color] = 0
+      for combinacion in self.combinaciones_aristas:
+          self.piezas_registradas['Arista'][combinacion] = 0
+      for combinacion in self.combinaciones_esquinas:
+          self.piezas_registradas['Esquina'][combinacion] = 0
 
     def crear_pieza(self, tipo, colores):
-        if tipo not in {'Centro', 'Arista', 'Esquina'}:
-            raise ValueError("Tipo de pieza no válido")
+      if tipo not in {'Centro', 'Arista', 'Esquina'}:
+          raise ValueError("Tipo de pieza no válido")
 
-        # Verificar si la combinación de colores es legal
-        if tipo == 'Centro':
-            if colores not in self.colores_centros:
-                raise ValueError("Combinación de colores de centro no válida")
-            diccionario = self.piezas_registradas['Centro']
-        elif tipo == 'Arista':
-            if tuple(sorted(colores)) not in self.combinaciones_aristas:
-                raise ValueError("Combinación de colores de arista no válida")
-            diccionario = self.piezas_registradas['Arista']
-        elif tipo == 'Esquina':
-            if tuple(sorted(colores)) not in self.combinaciones_esquinas:
-                raise ValueError("Combinación de colores de esquina no válida")
-            diccionario = self.piezas_registradas['Esquina']
+      # Verificar si la combinación de colores es legal
+      diccionario = {}
+      if tipo == 'Centro':
+          if colores not in self.colores_centros:
+              raise ValueError("Combinación de colores de centro no válida")
+          diccionario = self.piezas_registradas['Centro']
+      elif tipo == 'Arista':
+          if tuple(sorted(colores)) not in self.combinaciones_aristas:
+              raise ValueError("Combinación de colores de arista no válida")
+          diccionario = self.piezas_registradas['Arista']
+      elif tipo == 'Esquina':
+          if tuple(sorted(colores)) not in self.combinaciones_esquinas:
+              raise ValueError("Combinación de colores de esquina no válida")
+          diccionario = self.piezas_registradas['Esquina']
 
-        # Verificar si la pieza ya existe
-        if diccionario[colores] > 0:
-            raise ValueError("Ya existe una pieza con esta combinación de colores")
+      # Verificar si la pieza ya existe
+      if diccionario[colores] > 0:
+          raise ValueError("Ya existe una pieza con esta combinación de colores")
 
-        # Marcar la pieza como presente en el diccionario
-        diccionario[colores] += 1
+      # Marcar la pieza como presente en el diccionario
+      diccionario[colores] += 1
 
-        # Crear la pieza y devolverla
-        if tipo == 'Centro':
-            return Centro(colores)
-        elif tipo == 'Arista':
-            return Arista(colores)
-        elif tipo == 'Esquina':
-            return Esquina(colores)
+      # Crear la pieza y devolverla
+      if tipo == 'Centro':
+          return Centro(colores)
+      elif tipo == 'Arista':
+          return Arista(colores)
+      elif tipo == 'Esquina':
+          return Esquina(colores)
+
 
     def obtener_pieza(self, numero_cara, numero_pieza):
         # Obtener la pieza en la posición (numero_cara, numero_pieza)
@@ -212,7 +233,7 @@ class CuboRubik:
         elif movimiento in {'U', 'U\'', 'D', 'D\''}:
             self.actualizar_caras_izquierda()
 
-    def resolver(self, secuencia):
-        # Resolver el cubo dado una secuencia de movimientos
-        for movimiento in secuencia:
-            self.mover(movimiento)
+    def resolver(self):
+      solver = CuboSolverAStar(self.estado_cubo, self)
+      pasos = solver.resolver()
+      return pasos # Llamar al método resolver del solver
